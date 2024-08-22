@@ -51,22 +51,22 @@ struct ContentView: View {
                     })
                     .disabled(isTimerRunning)
                     
-                    if isTimerRunning {
-                        Button(isTimerPaused ? "Resume" : "Pause") {
-                            isTimerPaused.toggle()
-                            if isTimerPaused {
-                                cancellableTask?.cancel()
-                            } else {
-                                startTimer()
-                            }
+                    Button(isTimerPaused ? "Resume" : "Pause") {
+                        isTimerPaused.toggle()
+                        if isTimerPaused {
+                            cancellableTask?.cancel()
+                        } else {
+                            startTimer()
                         }
-                        
-                        Button("Stop") {
-                            stopTimer()
-                        }
-                        
-                        Text("\(remainingTime / 60):\(String(format: "%02d", remainingTime % 60))")
                     }
+                    .disabled(!isTimerRunning)
+                        
+                    Button("Stop") {
+                        stopTimer()
+                    }
+                    .disabled(!isTimerRunning)
+                        
+                    Text("\(remainingTime / 60):\(String(format: "%02d", remainingTime % 60))")
                 }
                 .padding()
                 
