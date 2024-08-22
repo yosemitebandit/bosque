@@ -20,6 +20,7 @@ struct Tree: Identifiable {
 
 struct ContentView: View {
     @State private var isTimerRunning = false
+    @State private var isTimerPaused = false
     @State private var trees: [Tree] = []
     @State private var remainingTime: Int
     
@@ -27,6 +28,7 @@ struct ContentView: View {
     let timerDuration = 5
     
     @State private var zStackFrame: CGRect = .zero
+    @State private var cancellableTask: DispatchWorkItem?
     
     init() {
         _remainingTime = State(initialValue: timerDuration)
@@ -45,15 +47,21 @@ struct ContentView: View {
                 HStack {
                     Button("Start", action: {
                         isTimerRunning = true
+                        isTimerPaused = false
                         remainingTime = timerDuration  // reset timer
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                            isTimerRunning = false
-                            addTree()
-                        }
+                        startTimer()
                     })
                     .disabled(isTimerRunning)
                     
                     if isTimerRunning {
+                        Button(isTimerPaused ? "Resume" : "Pause") {
+                            isTimerPaused.toggle()
+                            if isTimerPaused {
+                                cancellableTask?.cancel()
+                            } else {
+                                startTimer()
+                            }
+                        }
                         Text("\(remainingTime / 60):\(String(format: "%02d", remainingTime % 60))")
                     }
                 }
@@ -64,11 +72,9 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .onReceive(timer) { _ in
-            if isTimerRunning {
+            if isTimerRunning && !isTimerPaused {
                 if remainingTime > 0 {
                     remainingTime -= 1
-                } else {
-                    isTimerRunning = false
                 }
             }
         }
@@ -102,6 +108,17 @@ struct ContentView: View {
         } else {
             print("Window not found.")
         }
+    }
+    
+    func startTimer() {
+        cancellableTask?.cancel()
+        
+        cancellableTask = DispatchWorkItem {
+            isTimerRunning = false
+            addTree()
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(remainingTime), execute: cancellableTask!)
     }
 }
 
