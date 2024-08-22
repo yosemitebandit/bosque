@@ -6,8 +6,6 @@
 // - persist between opening the app
 // - different icons
 // - use app outside of xcode
-// - pause timer
-// - reset timer
 // - app icon
 //
 
@@ -62,6 +60,11 @@ struct ContentView: View {
                                 startTimer()
                             }
                         }
+                        
+                        Button("Stop") {
+                            stopTimer()
+                        }
+                        
                         Text("\(remainingTime / 60):\(String(format: "%02d", remainingTime % 60))")
                     }
                 }
@@ -119,6 +122,13 @@ struct ContentView: View {
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(remainingTime), execute: cancellableTask!)
+    }
+    
+    func stopTimer() {
+        isTimerRunning = false
+        isTimerPaused = false
+        cancellableTask?.cancel()
+        remainingTime = timerDuration
     }
 }
 
