@@ -12,6 +12,7 @@ import SwiftUI
 struct Tree: Identifiable {
     let id = UUID()
     let position: CGPoint
+    var emoji: String
 }
 
 struct ContentView: View {
@@ -26,6 +27,8 @@ struct ContentView: View {
     @State private var zStackFrame: CGRect = .zero
     @State private var cancellableTask: DispatchWorkItem?
     
+    let emojis = ["🌳", "🌲", "🌴", "🌵", "🌿"]
+    
     init() {
         _remainingTime = State(initialValue: timerDuration)
     }
@@ -34,7 +37,7 @@ struct ContentView: View {
         ZStack {
             
             ForEach(trees) { tree in
-                Text("🌳")
+                Text(tree.emoji)
                     .font(.system(size:50))
                     .position(tree.position)
             }
@@ -45,6 +48,7 @@ struct ContentView: View {
                         isTimerRunning = true
                         isTimerPaused = false
                         remainingTime = timerDuration  // reset timer
+                        addSeedling()
                         startTimer()
                     })
                     .disabled(isTimerRunning)
@@ -89,7 +93,7 @@ struct ContentView: View {
                         trees = trees.map { tree in
                             let newX = tree.position.x / zStackFrame.width * newFrame.width
                             let newY = tree.position.y / zStackFrame.height * newFrame.height
-                            return Tree(position: CGPoint(x: newX, y: newY))
+                            return Tree(position: CGPoint(x: newX, y: newY), emoji: tree.emoji)
                         }
                         zStackFrame = newFrame
                     }
@@ -98,17 +102,30 @@ struct ContentView: View {
 
     }
     
-    func addTree() {
+    func addSeedling() {
         // Access the ZStack's frame using the GeometryProxy and NSWindow
         if let window = NSApplication.shared.windows.first {
             let zStackFrame = window.contentView!.frame
+            
             trees.append(Tree(position: CGPoint(
                 x: CGFloat.random(in: 0..<zStackFrame.width),
                 y: CGFloat.random(in: 0..<zStackFrame.height)
-            )))
+                ), emoji: "🌱"))
         } else {
             print("Window not found.")
         }
+    }
+    
+    func growTree() {
+        let randomEmoji = emojis.randomElement() ?? "🌳"
+
+        if let lastTreeIndex = trees.lastIndex(where: { $0.emoji == "🌱" }) {
+            trees[lastTreeIndex].emoji = randomEmoji
+        } else {
+            print("No seedling found to grow.")
+        }
+
+        remainingTime = timerDuration
     }
     
     func startTimer() {
@@ -116,7 +133,7 @@ struct ContentView: View {
         
         cancellableTask = DispatchWorkItem {
             isTimerRunning = false
-            addTree()
+            growTree()
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(remainingTime), execute: cancellableTask!)
@@ -127,6 +144,10 @@ struct ContentView: View {
         isTimerPaused = false
         cancellableTask?.cancel()
         remainingTime = timerDuration
+        // Remove only the seedling if it exists
+        if let lastTreeIndex = trees.lastIndex(where: { $0.emoji == "🌱" }) {
+            trees.remove(at: lastTreeIndex)
+        }
     }
 }
 
