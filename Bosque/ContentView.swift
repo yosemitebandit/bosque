@@ -4,7 +4,6 @@
 //
 // TODO
 // - wonkiness when timer is running and window is resized
-// - make timer length a better var
 // - persist between opening the app
 // - different icons
 // - use app outside of xcode
@@ -23,9 +22,14 @@ struct Tree: Identifiable {
 struct ContentView: View {
     @State private var isTimerRunning = false
     @State private var trees: [Tree] = []
-    @State private var remainingTime: Int = 5
+    @State private var remainingTime: Int
     
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    let timerDuration = 5
+    
+    init() {
+        _remainingTime = State(initialValue: timerDuration)
+    }
     
     var body: some View {
         ZStack {
@@ -40,7 +44,7 @@ struct ContentView: View {
                 HStack {
                     Button("Start", action: {
                         isTimerRunning = true
-                        remainingTime = 5  // reset timer
+                        remainingTime = timerDuration  // reset timer
                         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
                             isTimerRunning = false
                             addTree()
