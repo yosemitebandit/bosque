@@ -3,22 +3,31 @@
 //  Bosque
 //
 // TODO
-// - persist between opening the app
 // - use app outside of xcode
 //
 
 import SwiftUI
 
-struct Tree: Identifiable {
-    let id = UUID()
+struct Tree: Identifiable, Codable {
+    var id = UUID()
     let position: CGPoint
     var emoji: String
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case position
+        case emoji
+    }
 }
 
 struct ContentView: View {
     @State private var isTimerRunning = false
     @State private var isTimerPaused = false
-    @State private var trees: [Tree] = []
+    @State private var trees: [Tree] = []  {
+        didSet {
+            saveTrees()
+        }
+    }
     @State private var remainingTime: Int
     
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -52,6 +61,7 @@ struct ContentView: View {
     
     init() {
         _remainingTime = State(initialValue: timerDuration)
+        _trees = State(initialValue: loadTrees())
     }
     
     var body: some View {
@@ -104,6 +114,9 @@ struct ContentView: View {
                 }
             }
         }
+        .onDisappear {
+            saveTrees()
+        }
         .background(
             GeometryReader { geometry in
                 Color.clear
@@ -120,8 +133,8 @@ struct ContentView: View {
                     }
             }
         )
-
     }
+    
     
     func addSeedling() {
         // Access the ZStack's frame using the GeometryProxy and NSWindow
@@ -168,6 +181,21 @@ struct ContentView: View {
         // Remove only the seedling if it exists
         if let lastTreeIndex = trees.lastIndex(where: { $0.emoji == "🌱" }) {
             trees.remove(at: lastTreeIndex)
+        }
+    }
+    
+    func saveTrees() {
+        if let encoded = try? JSONEncoder().encode(trees) {
+            UserDefaults.standard.set(encoded, forKey: "savedTrees")
+        }
+    }
+
+    func loadTrees() -> [Tree] {
+        if let data = UserDefaults.standard.data(forKey: "savedTrees"),
+           let decoded = try? JSONDecoder().decode([Tree].self, from: data) {
+            return decoded
+        } else {
+            return []
         }
     }
 }
