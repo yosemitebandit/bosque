@@ -6,7 +6,6 @@
 // - persist between opening the app
 // - different icons
 // - use app outside of xcode
-// - app icon
 //
 
 import SwiftUI
