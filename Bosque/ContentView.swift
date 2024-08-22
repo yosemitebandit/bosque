@@ -2,6 +2,15 @@
 //  ContentView.swift
 //  Bosque
 //
+// TODO
+// - wonkiness when timer is running and window is resized
+// - make timer length a better var
+// - persist between opening the app
+// - different icons
+// - use app outside of xcode
+// - pause timer
+// - reset timer
+//
 
 import SwiftUI
 
