@@ -10,6 +10,7 @@
 // - use app outside of xcode
 // - pause timer
 // - reset timer
+// - app icon
 //
 
 import SwiftUI
