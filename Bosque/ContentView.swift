@@ -3,7 +3,6 @@
 //  Bosque
 //
 // TODO
-// - wonkiness when timer is running and window is resized
 // - persist between opening the app
 // - different icons
 // - use app outside of xcode
@@ -26,6 +25,8 @@ struct ContentView: View {
     
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     let timerDuration = 5
+    
+    @State private var zStackFrame: CGRect = .zero
     
     init() {
         _remainingTime = State(initialValue: timerDuration)
@@ -74,16 +75,16 @@ struct ContentView: View {
         .background(
             GeometryReader { geometry in
                 Color.clear
+                    .onAppear {
+                        zStackFrame = geometry.frame(in: .global)
+                    }
                     .onChange(of: geometry.frame(in: .global)) { newFrame in
-                        if isTimerRunning {
-                            // Recalculate treePosition if the timer is running and the frame changes
-                            trees = trees.map { _ in
-                                Tree(position: CGPoint(
-                                    x: CGFloat.random(in: 0..<newFrame.width),
-                                    y: CGFloat.random(in: 0..<newFrame.height)
-                                ))
-                            }
+                        trees = trees.map { tree in
+                            let newX = tree.position.x / zStackFrame.width * newFrame.width
+                            let newY = tree.position.y / zStackFrame.height * newFrame.height
+                            return Tree(position: CGPoint(x: newX, y: newY))
                         }
+                        zStackFrame = newFrame
                     }
             }
         )
