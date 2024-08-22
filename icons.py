@@ -1,12 +1,15 @@
+import argparse
+
 from PIL import Image
 
 
-def resize_app_icon(input_path):
+def resize_app_icon(input_path, border_percentage=0.065):
     """
-    Resizes a 1024px square image to the required macOS app icon sizes.
+    Resizes a 1024px square image to the required macOS app icon sizes with a transparent border.
 
     Args:
         input_path: The path to the input image (1024x1024 pixels).
+        border_percentage: The percentage of the icon size to use as the border (default: 0.065, which is approximately 68 pixels for a 1024x1024 image).
     """
 
     required_sizes = {
@@ -27,11 +30,28 @@ def resize_app_icon(input_path):
             width, height = map(int, size.split("x"))
             for scale in scales:
                 new_size = (width * scale, height * scale)
+
+                # Calculate border size based on percentage
+                border_size = int(min(new_size[0], new_size[1]) * border_percentage)
+
+                resized_image_width = new_size[0] - 2 * border_size
+                resized_image_height = new_size[1] - 2 * border_size
+
+                if resized_image_width <= 0 or resized_image_height <= 0:
+                    raise ValueError(
+                        f"Border percentage ({border_percentage}) is too large for icon size {size}@{scale}x. Reduce the percentage or skip this size."
+                    )
+
                 resized_img = img.resize(
-                    new_size, Image.LANCZOS
-                )  # Use LANCZOS for high-quality resizing
+                    (resized_image_width, resized_image_height), Image.LANCZOS
+                )
+
+                final_img = Image.new("RGBA", new_size, (0, 0, 0, 0))
+                paste_position = (border_size, border_size)
+                final_img.paste(resized_img, paste_position)
+
                 output_filename = f"Icon-App-{width}x{height}@{scale}x.png"
-                resized_img.save(output_filename)
+                final_img.save(output_filename)
                 print(f"Saved: {output_filename}")
 
     except (IOError, ValueError) as e:
@@ -39,5 +59,16 @@ def resize_app_icon(input_path):
 
 
 if __name__ == "__main__":
-    input_image_path = input("Enter the path to your 1024x1024 image: ")
-    resize_app_icon(input_image_path)
+    parser = argparse.ArgumentParser(
+        description="Resize a 1024px square image to macOS app icon sizes with a transparent border."
+    )
+    parser.add_argument("input_path", help="Path to the input image (1024x1024 pixels)")
+    parser.add_argument(
+        "--border_percentage",
+        type=float,
+        default=0.065,
+        help="Border percentage (default: 0.065)",
+    )
+    args = parser.parse_args()
+
+    resize_app_icon(args.input_path, args.border_percentage)
