@@ -12,6 +12,7 @@ struct Tree: Identifiable, Codable {
     var id = UUID()
     let position: CGPoint
     var emoji: String
+    var isHighlighted: Bool = false
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -70,7 +71,17 @@ struct ContentView: View {
             ForEach(trees) { tree in
                 Text(tree.emoji)
                     .font(.system(size:50))
+                    .background(Color.clear)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(tree.isHighlighted ? Color.red: Color.clear, lineWidth: 5)
+                    )
                     .position(tree.position)
+                    .onTapGesture {
+                        if let index = trees.firstIndex(where: {$0.id == tree.id }) {
+                            trees[index].isHighlighted.toggle()
+                        }
+                    }
             }
             
             VStack {
@@ -78,7 +89,7 @@ struct ContentView: View {
                     Button("Start", action: {
                         isTimerRunning = true
                         isTimerPaused = false
-                        remainingTime = timerDuration  // reset timer
+                        remainingTime = timerDuration
                         addSeedling()
                         startTimer()
                     })
@@ -93,14 +104,21 @@ struct ContentView: View {
                         }
                     }
                     .disabled(!isTimerRunning)
-                        
+                    
                     Button("Stop") {
                         stopTimer()
                     }
                     .disabled(!isTimerRunning)
-                        
+                    
                     Text("\(remainingTime / 60):\(String(format: "%02d", remainingTime % 60))")
+                    
+                    if let highlightedTreeIndex = trees.firstIndex(where: { $0.isHighlighted }) {
+                        Button("Remove") {
+                            trees.remove(at: highlightedTreeIndex)
+                        }
+                    }
                 }
+                
                 .padding()
                 
                 Spacer()
@@ -135,7 +153,7 @@ struct ContentView: View {
                             newX = max(0, min(newX, geometry.frame(in: .global).width))
                             newY = max(0, min(newY, geometry.frame(in: .global).height))
                             
-                            return Tree(position: CGPoint(x: newX, y: newY), emoji: tree.emoji)
+                            return Tree(position: CGPoint(x: newX, y: newY), emoji: tree.emoji, isHighlighted: tree.isHighlighted)
                         }
                         zStackFrame = geometry.frame(in: .global)
                     }
