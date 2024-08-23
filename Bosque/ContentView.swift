@@ -123,13 +123,21 @@ struct ContentView: View {
                     .onAppear {
                         zStackFrame = geometry.frame(in: .global)
                     }
-                    .onChange(of: geometry.frame(in: .global)) { newFrame in
+                    .onChange(of: geometry.frame(in: .global)) {
+                        let widthScale = geometry.frame(in: .global).width / zStackFrame.width
+                        let heightScale = geometry.frame(in: .global).height / zStackFrame.height
+                        
                         trees = trees.map { tree in
-                            let newX = tree.position.x / zStackFrame.width * newFrame.width
-                            let newY = tree.position.y / zStackFrame.height * newFrame.height
+                            var newX = tree.position.x * widthScale
+                            var newY = tree.position.y * heightScale
+                            
+                            // Constrain new positions within the new frame
+                            newX = max(0, min(newX, geometry.frame(in: .global).width))
+                            newY = max(0, min(newY, geometry.frame(in: .global).height))
+                            
                             return Tree(position: CGPoint(x: newX, y: newY), emoji: tree.emoji)
                         }
-                        zStackFrame = newFrame
+                        zStackFrame = geometry.frame(in: .global)
                     }
             }
         )
@@ -141,10 +149,13 @@ struct ContentView: View {
         if let window = NSApplication.shared.windows.first {
             let zStackFrame = window.contentView!.frame
             
-            trees.append(Tree(position: CGPoint(
-                x: CGFloat.random(in: 0..<zStackFrame.width),
-                y: CGFloat.random(in: 0..<zStackFrame.height)
+            DispatchQueue.main.async {
+                trees.append(Tree(position: CGPoint(
+                    x: CGFloat.random(in: 0..<zStackFrame.width),
+                    y: CGFloat.random(in: 0..<zStackFrame.height)
                 ), emoji: "🌱"))
+                saveTrees()
+            }
         } else {
             print("Window not found.")
         }
@@ -154,7 +165,10 @@ struct ContentView: View {
         let randomEmoji = emojis.randomElement() ?? "🌳"
 
         if let lastTreeIndex = trees.lastIndex(where: { $0.emoji == "🌱" }) {
-            trees[lastTreeIndex].emoji = randomEmoji
+            DispatchQueue.main.async {
+                trees[lastTreeIndex].emoji = randomEmoji
+                saveTrees()
+            }
         } else {
             print("No seedling found to grow.")
         }
@@ -181,6 +195,7 @@ struct ContentView: View {
         // Remove only the seedling if it exists
         if let lastTreeIndex = trees.lastIndex(where: { $0.emoji == "🌱" }) {
             trees.remove(at: lastTreeIndex)
+            saveTrees()
         }
     }
     
