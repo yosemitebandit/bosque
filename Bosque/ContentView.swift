@@ -98,8 +98,9 @@ struct ContentView: View {
                                         .blur(radius: 5)
                                 }
                                 
-                                RoundedRectangle(cornerRadius: 10)
+                                Circle()
                                     .stroke(tree.isHighlighted ? Color.red : Color.clear, lineWidth: 2)
+                                    .scaleEffect(1.2)
                             }
                            
                         )
