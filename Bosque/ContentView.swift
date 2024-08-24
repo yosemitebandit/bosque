@@ -94,7 +94,15 @@ struct ContentView: View {
                         .position(x: x, y: y)
                         .onTapGesture {
                             if let index = trees.firstIndex(where: { $0.id == tree.id }) {
-                                trees[index].isHighlighted.toggle()
+                                if trees[index].isHighlighted {
+                                    // If the clicked tree is already highlighted, unhighlight it
+                                    trees[index].isHighlighted = false
+                                } else {
+                                    // Otherwise, unhighlight all other trees and highlight the clicked one
+                                    for i in 0..<trees.count {
+                                        trees[i].isHighlighted = trees[i].id == tree.id
+                                    }
+                                }
                             }
                         }
                     
