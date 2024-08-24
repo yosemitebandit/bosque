@@ -93,7 +93,7 @@ struct ContentView: View {
                                 if tree.isNew {
                                     Circle()
                                         .fill(RadialGradient(gradient: Gradient(colors: [.yellow, .clear]), center: .center, startRadius: 0, endRadius: 0))
-                                        .opacity(0.4)
+                                        .opacity(0.25)
                                         .scaleEffect(1.4)
                                         .blur(radius: 5)
                                 }
