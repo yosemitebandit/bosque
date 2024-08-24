@@ -13,6 +13,7 @@ struct Tree: Identifiable, Codable {
     let gridIndex: Int
     var emoji: String
     var isHighlighted: Bool = false
+    var isNew: Bool = false
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -88,8 +89,19 @@ struct ContentView: View {
                         .frame(width: cellSize.width * emojiScalingFactor, height: cellSize.height * emojiScalingFactor)
                         .background(Color.clear)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(tree.isHighlighted ? Color.red : Color.clear, lineWidth: 2)
+                            ZStack {
+                                if tree.isNew {
+                                    Circle()
+                                        .fill(RadialGradient(gradient: Gradient(colors: [.yellow, .clear]), center: .center, startRadius: 0, endRadius: 0))
+                                        .opacity(0.4)
+                                        .scaleEffect(1.4)
+                                        .blur(radius: 5)
+                                }
+                                
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(tree.isHighlighted ? Color.red : Color.clear, lineWidth: 2)
+                            }
+                           
                         )
                         .position(x: x, y: y)
                         .onTapGesture {
@@ -171,7 +183,11 @@ struct ContentView: View {
         let emptyIndices = Array(0..<(gridColumns * gridRows)).filter { index in
             trees.first(where: { $0.gridIndex == index }) == nil
         }
+        
         if let randomIndex = emptyIndices.randomElement() {
+            for i in 0..<trees.count {
+                trees[i].isNew = false
+            }
             trees.append(Tree(gridIndex: randomIndex, emoji: "🌱"))
         } else {
             print("no empty space for a seedling")
@@ -184,6 +200,7 @@ struct ContentView: View {
         if let lastTreeIndex = trees.lastIndex(where: { $0.emoji == "🌱" }) {
             DispatchQueue.main.async {
                 trees[lastTreeIndex].emoji = randomEmoji
+                trees[lastTreeIndex].isNew = true
                 saveTrees()
             }
         } else {
