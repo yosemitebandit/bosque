@@ -10,13 +10,13 @@ import SwiftUI
 
 struct Tree: Identifiable, Codable {
     var id = UUID()
-    let position: CGPoint
+    let gridIndex: Int
     var emoji: String
     var isHighlighted: Bool = false
     
     enum CodingKeys: String, CodingKey {
         case id
-        case position
+        case gridIndex
         case emoji
     }
 }
@@ -32,7 +32,11 @@ struct ContentView: View {
     @State private var remainingTime: Int
     
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-    let timerDuration = 5
+    let timerDuration = 3
+    
+    let gridColumns = 100
+    let gridRows = 100
+    let emojiScalingFactor: CGFloat = 7.0
     
     @State private var zStackFrame: CGRect = .zero
     @State private var cancellableTask: DispatchWorkItem?
@@ -67,21 +71,35 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
-            
-            ForEach(trees) { tree in
-                Text(tree.emoji)
-                    .font(.system(size:50))
-                    .background(Color.clear)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(tree.isHighlighted ? Color.red: Color.clear, lineWidth: 5)
-                    )
-                    .position(tree.position)
-                    .onTapGesture {
-                        if let index = trees.firstIndex(where: {$0.id == tree.id }) {
-                            trees[index].isHighlighted.toggle()
+            GeometryReader { geometry in
+                let cellSize = CGSize(
+                    width: geometry.size.width / CGFloat(gridColumns),
+                    height: geometry.size.height / CGFloat(gridRows)
+                )
+                
+                ForEach(trees) { tree in
+                    let row = tree.gridIndex / gridColumns
+                    let col = tree.gridIndex % gridColumns
+                    let x = CGFloat(col) * cellSize.width + cellSize.width / 2
+                    let y = CGFloat(row) * cellSize.height + cellSize.height / 2
+                    
+                    Text(tree.emoji)
+                        .font(.system(size: min(cellSize.width, cellSize.height) * emojiScalingFactor))
+                        .frame(width: cellSize.width * emojiScalingFactor, height: cellSize.height * emojiScalingFactor)
+                        .background(Color.clear)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(tree.isHighlighted ? Color.red : Color.clear, lineWidth: 2)
+                        )
+                        .position(x: x, y: y)
+                        .onTapGesture {
+                            if let index = trees.firstIndex(where: { $0.id == tree.id }) {
+                                trees[index].isHighlighted.toggle()
+                            }
                         }
-                    }
+                    
+                }
+                .drawingGroup()
             }
             
             VStack {
@@ -117,9 +135,12 @@ struct ContentView: View {
                             trees.remove(at: highlightedTreeIndex)
                         }
                     }
+
                 }
-                
+
                 .padding()
+
+
                 
                 Spacer()
             }
@@ -135,47 +156,17 @@ struct ContentView: View {
         .onDisappear {
             saveTrees()
         }
-        .background(
-            GeometryReader { geometry in
-                Color.clear
-                    .onAppear {
-                        zStackFrame = geometry.frame(in: .global)
-                    }
-                    .onChange(of: geometry.frame(in: .global)) {
-                        let widthScale = geometry.frame(in: .global).width / zStackFrame.width
-                        let heightScale = geometry.frame(in: .global).height / zStackFrame.height
-                        
-                        trees = trees.map { tree in
-                            var newX = tree.position.x * widthScale
-                            var newY = tree.position.y * heightScale
-                            
-                            // Constrain new positions within the new frame
-                            newX = max(0, min(newX, geometry.frame(in: .global).width))
-                            newY = max(0, min(newY, geometry.frame(in: .global).height))
-                            
-                            return Tree(position: CGPoint(x: newX, y: newY), emoji: tree.emoji, isHighlighted: tree.isHighlighted)
-                        }
-                        zStackFrame = geometry.frame(in: .global)
-                    }
-            }
-        )
     }
     
     
     func addSeedling() {
-        // Access the ZStack's frame using the GeometryProxy and NSWindow
-        if let window = NSApplication.shared.windows.first {
-            let zStackFrame = window.contentView!.frame
-            
-            DispatchQueue.main.async {
-                trees.append(Tree(position: CGPoint(
-                    x: CGFloat.random(in: 0..<zStackFrame.width),
-                    y: CGFloat.random(in: 0..<zStackFrame.height)
-                ), emoji: "🌱"))
-                saveTrees()
-            }
+        let emptyIndices = Array(0..<(gridColumns * gridRows)).filter { index in
+            trees.first(where: { $0.gridIndex == index }) == nil
+        }
+        if let randomIndex = emptyIndices.randomElement() {
+            trees.append(Tree(gridIndex: randomIndex, emoji: "🌱"))
         } else {
-            print("Window not found.")
+            print("no empty space for a seedling")
         }
     }
     
