@@ -2,9 +2,6 @@
 //  ContentView.swift
 //  Bosque
 //
-// TODO
-// - use app outside of xcode
-//
 
 import SwiftUI
 
@@ -33,7 +30,7 @@ struct ContentView: View {
     @State private var remainingTime: Int
     
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-    let timerDuration = 3
+    let timerDuration = 25 * 60
     
     let gridColumns = 100
     let gridRows = 100
